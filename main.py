@@ -1,5 +1,6 @@
 import os
-os.system("ollama run llama3")
+os.system("curl -fsSL https://ollama.com/install.sh | sh")
+os.system("ollama pull llama3")
 
 import streamlit as st
 from langchain_core.messages import ChatMessage
