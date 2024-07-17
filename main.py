@@ -1,3 +1,6 @@
+import os
+os.system("ollama run llama3")
+
 import streamlit as st
 from langchain_core.messages import ChatMessage
 from langchain_community.chat_models import ChatOllama
