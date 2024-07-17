@@ -9,7 +9,7 @@ language_dict = {"Korean": "ko", "English": "en"}
 st.set_page_config(page_title="Youtube paper", page_icon="😊")
 
 if "llm" not in st.session_state:
-    st.session_state["llm"] = ChatOllama(model="llama3", temperature=0, base_url='http://host.docker.internal:11434')
+    st.session_state["llm"] = ChatOllama(model="llama3", temperature=0)
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 if "chat_history" not in st.session_state:
