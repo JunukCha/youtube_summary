@@ -1,7 +1,3 @@
-import os
-os.system("curl -fsSL https://ollama.com/install.sh | sh")
-os.system("ollama pull llama3")
-
 import streamlit as st
 from langchain_core.messages import ChatMessage
 from langchain_community.chat_models import ChatOllama
@@ -40,8 +36,6 @@ if "video_id" in st.session_state:
 if submit_button and video_id:
     try:
         with st.spinner():
-            VIDEO_URL = f"https://www.youtube.com/embed/{video_id}"
-            st.sidebar.video(VIDEO_URL)
             transcript = extract_transcript(video_id)
             st.session_state["transcript"] = transcript
             llm = st.session_state["llm"]
