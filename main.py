@@ -3,17 +3,11 @@ from langchain_core.messages import ChatMessage
 from langchain_community.chat_models import ChatOpenAI
 from lib.utils import translate_text, extract_transcript, print_messages, stream_parser_default, init_session
 from prompt import basic_prompt, chat_history_prompt
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lsa import LsaSummarizer
-
-# nltk.download('punkt')
 
 language_dict = {"korean": "ko", "english": "en"}
 
 # Initialize session state to track layout
 st.set_page_config(page_title="Youtube Summary", page_icon="😊")
-
 
 if 'run_go_button' in st.session_state \
     and st.session_state.run_go_button == True:
@@ -21,14 +15,8 @@ if 'run_go_button' in st.session_state \
 else:
     st.session_state.running = False
 
-model = st.sidebar.selectbox("Model", ["Basic", "gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"], disabled=st.session_state.running, on_change=init_session)
-
-if "gpt" in model:
-    openai_api_key = st.sidebar.text_input("OpenAI API Key", disabled=st.session_state.running, type="password")
-    target_n_sentences = None
-else:
-    openai_api_key = None
-    target_n_sentences = st.sidebar.text_input("The number of sentences", disabled=st.session_state.running)
+model = st.sidebar.selectbox("Model", ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"], disabled=st.session_state.running, on_change=init_session)
+openai_api_key = st.sidebar.text_input("OpenAI API Key", disabled=st.session_state.running, type="password")
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
@@ -54,28 +42,18 @@ if "video_id" in st.session_state:
 
 # Sidebar button
 if submit_button and video_id:
-    if "llm" not in st.session_state and "gpt" in model:
+    if "llm" not in st.session_state:
         st.session_state["llm"] = ChatOpenAI(openai_api_key=openai_api_key, model_name=model)
-    elif "llm" not in st.session_state and model == "Basic":
-        st.session_state["llm"] = LsaSummarizer()
 
     try:
         with st.spinner():
             transcript = extract_transcript(video_id)
             st.session_state["transcript"] = transcript
+
             llm = st.session_state["llm"]
-
-            if "gpt" in model:
-                chat_chain = basic_prompt | llm
-                output = chat_chain.invoke({"input": transcript, "language": language})
-                summary = output.content
-            else:
-                parser = PlaintextParser.from_string(transcript, Tokenizer("korean"))
-                output = llm(parser.document, target_n_sentences)  # 요약 문장 수 설정
-                summary = ""
-                for sentence in output:
-                    summary += str(sentence)+"\n"
-
+            chat_chain = basic_prompt | llm
+            output = chat_chain.invoke({"input": transcript, "language": language})
+            summary = output.content
             summary_transl = translate_text(summary, language_dict[language])
             with st.chat_message("assistant"):
                 st.write(summary_transl)
@@ -92,7 +70,7 @@ if submit_button and video_id:
     except Exception as e:
         st.error(f"An error occurred: {e}")
 
-if "transcript" in st.session_state and "gpt" in model:
+if "transcript" in st.session_state:
     user_input = st.chat_input("How can I help you?")
     if user_input:
         with st.chat_message("user"):

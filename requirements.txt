@@ -1,10 +1,7 @@
 youtube-transcript-api
-konlpy
-nltk
 langchain
 langchain_community
 openai
 streamlit
 googletrans==3.1.0a0
-sumy
 httpx==0.13.3
