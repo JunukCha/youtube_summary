@@ -2,7 +2,9 @@ import streamlit as st
 from youtube_transcript_api import YouTubeTranscriptApi
 from googletrans import Translator
 from docx import Document
+from htmldocx import HtmlToDocx
 from io import BytesIO
+import markdown2
 
 def translate_text(text, dest_lang):
     translator = Translator()
@@ -39,12 +41,25 @@ def init_session():
     if "video_id" in st.session_state:
         del st.session_state.video_id
 
+# Function to save chat history to a docx file
 def save_chat_to_docx(chat_history):
     doc = Document()
     doc.add_heading("Chat History", 0)
     
-    for chat in chat_history:
-        doc.add_paragraph(chat)
+    h2d = HtmlToDocx()
+
+    # Iterate over chat history and format it
+    for speaker, chat in chat_history[1:]:  # Skip the first two entries
+        html_chat = markdown2.markdown(chat)
+        print(html_chat)
+        if speaker == "human":
+            p = doc.add_paragraph()
+            p.add_run("You: ").bold = True
+            h2d.add_html_to_document(html_chat, doc)
+        else:
+            p = doc.add_paragraph()
+            p.add_run("AI: ").bold = True
+            h2d.add_html_to_document(html_chat, doc)
     
     # Save the docx file in memory
     buffer = BytesIO()

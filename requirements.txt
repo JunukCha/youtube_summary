@@ -6,3 +6,5 @@ streamlit
 googletrans==3.1.0a0
 httpx==0.13.3
 python-docx
+markdown2
+htmldocx
