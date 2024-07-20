@@ -3,7 +3,6 @@ from langchain_core.messages import ChatMessage
 from langchain_community.chat_models import ChatOpenAI
 from lib.utils import translate_text, extract_transcript, print_messages, stream_parser_default, init_session
 from prompt import basic_prompt, chat_history_prompt
-import nltk
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
