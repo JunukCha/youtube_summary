@@ -57,7 +57,6 @@ if "transcript" not in st.session_state:
     st.write("Enter a YouTube video ID to get a summary of its content.")
 
 print_messages()
-show_cost(st.session_state.model)
 
 # Sidebar button
 if submit_button and video_id:
@@ -95,28 +94,29 @@ if submit_button and video_id:
 if "transcript" in st.session_state:
     user_input = st.chat_input("How can I help you?")
     if user_input:
-        with st.chat_message("user"):
-            st.write(user_input)
-        st.session_state["messages"].append(ChatMessage(role="user", content=user_input))
+        with st.spinner():
+            with st.chat_message("user"):
+                st.write(user_input)
+            st.session_state["messages"].append(ChatMessage(role="user", content=user_input))
 
-        llm = st.session_state["llm"]
+            llm = st.session_state["llm"]
 
-        chat_chain = chat_history_prompt | llm
+            chat_chain = chat_history_prompt | llm
 
-        output = chat_chain.invoke({"input": user_input, "chat_history": st.session_state["chat_history"]})
-        print(output.response_metadata['token_usage'])
-        update_token_usage(output.response_metadata['token_usage'])
-                
-        answer = output.content
-        language = st.session_state["language"]
-        answer_transl = translate_text(answer, language_dict[language])
+            output = chat_chain.invoke({"input": user_input, "chat_history": st.session_state["chat_history"]})
+            print(output.response_metadata['token_usage'])
+            update_token_usage(output.response_metadata['token_usage'])
+                    
+            answer = output.content
+            language = st.session_state["language"]
+            answer_transl = translate_text(answer, language_dict[language])
 
-        with st.chat_message("assistant"):
-            st.write(answer_transl)
+            with st.chat_message("assistant"):
+                st.write(answer_transl)
 
-        st.session_state["messages"].append(ChatMessage(role="assistant", content=answer_transl))
-        st.session_state["chat_history"].append(("human", user_input))
-        st.session_state["chat_history"].append(("ai", answer))
+            st.session_state["messages"].append(ChatMessage(role="assistant", content=answer_transl))
+            st.session_state["chat_history"].append(("human", user_input))
+            st.session_state["chat_history"].append(("ai", answer))
 
     doc_buffer = save_chat_to_docx(st.session_state.chat_history)
     st.download_button(
@@ -125,3 +125,5 @@ if "transcript" in st.session_state:
         file_name="chat_history.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
+
+show_cost(st.session_state.model)
