@@ -1,7 +1,7 @@
 import streamlit as st
 from langchain_core.messages import ChatMessage
 from langchain_community.chat_models import ChatOpenAI
-from lib.utils import translate_text, extract_transcript, print_messages, stream_parser_default, init_session
+from lib.utils import translate_text, extract_transcript, print_messages, stream_parser_default, init_session, save_chat_to_docx
 from prompt import basic_prompt, chat_history_prompt
 
 language_dict = {"korean": "ko", "english": "en"}
@@ -91,3 +91,11 @@ if "transcript" in st.session_state:
         st.session_state["messages"].append(ChatMessage(role="assistant", content=answer_transl))
         st.session_state["chat_history"].append(("human", user_input))
         st.session_state["chat_history"].append(("ai", answer))
+
+    doc_buffer = save_chat_to_docx(st.session_state.chat_history)
+    st.download_button(
+        label="Download DOCX",
+        data=doc_buffer,
+        file_name="chat_history.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )

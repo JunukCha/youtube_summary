@@ -1,6 +1,8 @@
 import streamlit as st
 from youtube_transcript_api import YouTubeTranscriptApi
 from googletrans import Translator
+from docx import Document
+from io import BytesIO
 
 def translate_text(text, dest_lang):
     translator = Translator()
@@ -36,3 +38,16 @@ def init_session():
         del st.session_state.transcript
     if "video_id" in st.session_state:
         del st.session_state.video_id
+
+def save_chat_to_docx(chat_history):
+    doc = Document()
+    doc.add_heading("Chat History", 0)
+    
+    for chat in chat_history:
+        doc.add_paragraph(chat)
+    
+    # Save the docx file in memory
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
