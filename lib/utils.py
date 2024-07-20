@@ -24,3 +24,15 @@ def print_messages():
 def stream_parser_default(stream):
     for chunk in stream:
         yield chunk.content
+
+def init_session():
+    if "messages" in st.session_state:
+        del st.session_state.messages
+    if "chat_history" in st.session_state:
+        del st.session_state.chat_history
+    if "llm" in st.session_state:
+        del st.session_state.llm
+    if "transcript" in st.session_state:
+        del st.session_state.transcript
+    if "video_id" in st.session_state:
+        del st.session_state.video_id
