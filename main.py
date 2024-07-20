@@ -1,10 +1,14 @@
 import streamlit as st
 from langchain_core.messages import ChatMessage
 from langchain_community.chat_models import ChatOpenAI
-from lib.utils import translate_text, extract_transcript, print_messages, stream_parser_default, init_session, save_chat_to_docx
-from prompt import basic_prompt, chat_history_prompt
-
-language_dict = {"korean": "ko", "english": "en"}
+from lib.utils import (
+    translate_text, extract_transcript, 
+    print_messages, save_chat_to_docx, 
+    update_token_usage, show_cost, 
+    extract_video_id
+)
+from lib.prompt import basic_prompt, chat_history_prompt
+from lib.constants import language_dict
 
 # Initialize session state to track layout
 st.set_page_config(page_title="Youtube Summary", page_icon="😊")
@@ -15,19 +19,37 @@ if 'run_go_button' in st.session_state \
 else:
     st.session_state.running = False
 
-model = st.sidebar.selectbox("Model", ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"], disabled=st.session_state.running, on_change=init_session)
-openai_api_key = st.sidebar.text_input("OpenAI API Key", disabled=st.session_state.running, type="password")
+if "llm" not in st.session_state:
+    st.sidebar.title("Model Selection")
+    model = st.sidebar.selectbox("Model", ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"], disabled=st.session_state.running)
+    openai_api_key = st.sidebar.text_input("OpenAI API Key", disabled=st.session_state.running, type="password")
+    st.sidebar.markdown("[OPENAI API Key](https://platform.openai.com/api-keys)")
+    st.session_state["model"] = model
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
+if "total_tokens" not in st.session_state:
+    st.session_state["total_tokens"] = 0
+if "prompt_tokens" not in st.session_state:
+    st.session_state["prompt_tokens"] = 0
+if "completion_tokens" not in st.session_state:
+    st.session_state["completion_tokens"] = 0
 
-# Sidebar
-st.sidebar.title("Language Selection")
-video_id = st.sidebar.text_input("YouTube Video ID:")
-language = st.sidebar.radio("Choose a language", ("korean", "english"))
-submit_button = st.sidebar.button("Go!", key='run_go_button')
+if "video_id" not in st.session_state:
+    # Sidebar
+    st.sidebar.title("Language Selection")
+    video_id = st.sidebar.text_input("YouTube URL or Video ID:", disabled=st.session_state.running)
+    video_id = extract_video_id(video_id)
+    language = st.sidebar.radio("Choose a language", ("korean", "english"))
+    submit_button = st.sidebar.button("Go!", key='run_go_button')
+    st.session_state["language"] = language
+else:
+    video_id = st.session_state["video_id"]
+    VIDEO_URL = f"https://www.youtube.com/embed/{video_id}"
+    st.sidebar.video(VIDEO_URL)
+    submit_button = None
 
 # Chat
 st.title("YouTube Video Summarizer :tv:")
@@ -35,10 +57,7 @@ if "transcript" not in st.session_state:
     st.write("Enter a YouTube video ID to get a summary of its content.")
 
 print_messages()
-
-if "video_id" in st.session_state:
-    VIDEO_URL = f"https://www.youtube.com/embed/{video_id}"
-    st.sidebar.video(VIDEO_URL)
+show_cost(st.session_state.model)
 
 # Sidebar button
 if submit_button and video_id:
@@ -52,12 +71,15 @@ if submit_button and video_id:
 
             llm = st.session_state["llm"]
             chat_chain = basic_prompt | llm
+            language = st.session_state["language"]
             output = chat_chain.invoke({"input": transcript, "language": language})
+            update_token_usage(output.response_metadata['token_usage'])
+
             summary = output.content
             summary_transl = translate_text(summary, language_dict[language])
             with st.chat_message("assistant"):
                 st.write(summary_transl)
-        
+
         st.session_state["messages"] = []
         st.session_state["chat_history"] = []
 
@@ -82,7 +104,11 @@ if "transcript" in st.session_state:
         chat_chain = chat_history_prompt | llm
 
         output = chat_chain.invoke({"input": user_input, "chat_history": st.session_state["chat_history"]})
+        print(output.response_metadata['token_usage'])
+        update_token_usage(output.response_metadata['token_usage'])
+                
         answer = output.content
+        language = st.session_state["language"]
         answer_transl = translate_text(answer, language_dict[language])
 
         with st.chat_message("assistant"):

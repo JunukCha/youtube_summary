@@ -5,6 +5,8 @@ from docx import Document
 from htmldocx import HtmlToDocx
 from io import BytesIO
 import markdown2
+import re
+from lib.constants import price_info
 
 def translate_text(text, dest_lang):
     translator = Translator()
@@ -65,3 +67,51 @@ def save_chat_to_docx(chat_history):
     doc.save(buffer)
     buffer.seek(0)
     return buffer
+
+def update_token_usage(usage):
+    st.session_state.total_tokens += usage['total_tokens']
+    st.session_state.prompt_tokens += usage['prompt_tokens']
+    st.session_state.completion_tokens += usage['completion_tokens']
+
+def show_cost(model):
+    input_token_price = price_info[model]["input"]
+    output_token_price = price_info[model]["output"]
+    input_cost = st.session_state.prompt_tokens * input_token_price
+    output_cost = st.session_state.completion_tokens * output_token_price
+    total_cost = input_cost + output_cost
+    st.sidebar.markdown(f"""
+### Cost Breakdown
+**Model:** {model}
+
+**Input Tokens Used:** {st.session_state.prompt_tokens}  
+**Input Token Cost (per 1M tokens):** \${input_token_price * 1_000_000:.2f}  
+**Input Cost:** ${input_cost:.4f}
+
+**Output Tokens Used:** {st.session_state.completion_tokens}  
+**Output Token Cost (per 1M tokens):** \${output_token_price * 1_000_000:.2f}  
+**Output Cost:** ${output_cost:.4f}
+
+**Total Cost (USD):** ${total_cost:.4f}
+""")
+    
+def extract_video_id(url):
+    if is_valid_url(url):
+        
+        pattern = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+        return None
+    else:
+        return url
+
+def is_valid_url(url):
+    pattern = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain...
+        r'localhost|' # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|' # ... IPv4 address
+        r'\[?[A-F0-9]*:[A-F0-9:]+\]?)' # ... IPv6 address
+        r'(?::\d+)?' # port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return re.match(pattern, url) is not None
