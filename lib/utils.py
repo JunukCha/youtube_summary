@@ -51,7 +51,6 @@ def save_chat_to_docx(chat_history):
     # Iterate over chat history and format it
     for speaker, chat in chat_history[1:]:  # Skip the first two entries
         html_chat = markdown2.markdown(chat)
-        print(html_chat)
         if speaker == "human":
             p = doc.add_paragraph()
             p.add_run("You: ").bold = True
